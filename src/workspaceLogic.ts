@@ -19,6 +19,15 @@ export function matchesProjectWindow(project:RecordItem,view:ProjectWindow,day:s
  if(view.startsWith('Due'))return Boolean(project.due&&project.due>=start&&project.due<=end);
  return Boolean(project.start&&project.due&&project.start<=end&&project.due>=start);
 }
+// Tasks can have an explicit start date; older tasks use their creation date.
+export function matchesTaskWindow(task:RecordItem,view:ProjectWindow,day:string):boolean{
+ if(view==='All')return true;
+ const unit=view.endsWith('week')?'week':view.endsWith('month')?'month':'day';
+ const {start,end}=period(day,unit);
+ if(view.startsWith('Due'))return Boolean(task.due&&task.due>=start&&task.due<=end);
+ const taskStart=task.start||task.created;
+ return Boolean(taskStart&&task.due&&taskStart<=end&&task.due>=start);
+}
 const importance=(p?:string)=>{const index=['Critical','High','Medium','Low'].indexOf(p||'');return index<0?4:index};
 export function sortProjects(projects:RecordItem[],criteria:SortKey[]):RecordItem[]{
  const keys=[...new Set(criteria.filter((key):key is Exclude<SortKey,'None'>=>key!=='None'))];
@@ -32,6 +41,7 @@ export function sortProjects(projects:RecordItem[],criteria:SortKey[]):RecordIte
   return (a.name||'').localeCompare(b.name||'',undefined,{sensitivity:'base'})||a.id.localeCompare(b.id);
  });
 }
+export const sortTasks=sortProjects;
 export function nextDailyTask(task:RecordItem,completedOn:string):RecordItem|null{
  if(task.kind!=='task'||task.recurrence!=='daily'||!task.recurrenceEnd)return null;
  const nextDue=addDays(completedOn,1);
