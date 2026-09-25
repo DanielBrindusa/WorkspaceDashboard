@@ -9,7 +9,7 @@ Private records and Google sign-in for the WorkspaceDashboard application. The G
 3. Create `.env.local` from `.env.example` for local development. Fill Firebase Web app configuration values. These identifiers become public in the JavaScript bundle and are **not secrets**. Do not put admin SDK keys in this project.
 4. Run `npm ci && npm run dev`, sign in with your own Google account. The app shows your Google Auth UID. In Firestore Console, create document `config/owner` with string field `uid` equal to that exact UID. Refresh. Only the Firebase console/admin may change ownership.
 5. In Firebase Authentication → Settings → Authorized domains, add the GitHub Pages domain, typically `YOURNAME.github.io` (domain only). If Google popup reports `auth/unauthorized-domain`, check this setting.
-6. From the original private workspace, click the header export icon and download JSON. In this app, use **Import** in the header while signed in as owner. Import overwrites matching IDs; keep the JSON backup. The first launch is intentionally empty until you import records.
+6. On a new installation, use **Import** to bring in a JSON backup if you already have one. Existing installations migrate their Firestore records automatically when multiuser mode is enabled.
 
 ## GitHub Pages deployment
 
@@ -22,7 +22,7 @@ Private records and Google sign-in for the WorkspaceDashboard application. The G
 
 The deployed app continues using its existing access model until the Firebase rules have been published and the new mode is activated. This prevents moving existing data under rules that have not yet been deployed.
 
-1. Keep a local JSON export of your workspace. From this repository, publish the exact contents of `firestore.rules` in Firebase Console → **Build → Firestore Database → Rules → Publish**, or use `npx firebase deploy --only firestore:rules --project YOUR_PROJECT_ID` with Firebase CLI login. This security step is separate from GitHub Pages; pushing a file to GitHub never deploys Firestore rules.
+1. Back up the Firestore database through an administrator-managed backup method before migration. From this repository, publish the exact contents of `firestore.rules` in Firebase Console → **Build → Firestore Database → Rules → Publish**, or use `npx firebase deploy --only firestore:rules --project YOUR_PROJECT_ID` with Firebase CLI login. This security step is separate from GitHub Pages; pushing a file to GitHub never deploys Firestore rules.
 2. In GitHub repository **Settings → Secrets and variables → Actions → Variables → New repository variable**, create `MULTIUSER_ENABLED` with value `true`. Then open **Actions → Deploy GitHub Pages → Run workflow → Run workflow** to rebuild the site. If the new Actions page does not appear, push a commit or rerun the latest deployment workflow.
 3. Sign in as the primary owner. The first load copies existing root `records` to `workspaces/OWNER_UID/records` and writes a migration marker. Wait for it to complete and check your projects. Existing records remain at their original path, accessible only to the owner. Do not delete them until you have verified the move and backed up your data.
 4. A different Google account now opens its own private, initially empty dashboard. It can request your dashboard; alternatively you can share by verified Google email for 5, 10, 24, 48 hours, or unlimited. It switches between **My dashboard** and **Shared dashboard** when allowed. Your shares allow reading only. Revoke from **Sharing → Active access**. If the same person has both an account grant and an email invite, revoke both entries.
@@ -30,7 +30,7 @@ The deployed app continues using its existing access model until the Firebase ru
 
 Firestore rules enforce isolation on the server. A copied web API key, Firebase project ID, or GitHub Actions variable does not grant permission to read records. These web configuration values appear in the public site bundle. Never commit an Admin SDK service account, OAuth client secret, private key, or privileged token. Firebase Console → Google Cloud Console → APIs & Services → Credentials: restrict the Firebase Web API key to only the Firebase APIs it needs, and check the allowed websites carefully against Firebase Auth behavior. Enable Firebase App Check with a suitable web provider for abuse protection, then monitor metrics before enforcing it for Firestore. App Check supplements the rules; it does not replace account authorization.
 
-A visitor who has previously viewed or exported records may retain copies after revocation. Sharing permissions control future server reads only. The owner can currently share their primary dashboard; other account owners cannot share their own dashboard through the current UI.
+A visitor who has previously viewed records may retain copies after revocation. Sharing permissions control future server reads only. The owner can currently share their primary dashboard; other account owners cannot share their own dashboard through the current UI.
 
 ## Test the rules
 
@@ -46,3 +46,7 @@ Install dependencies with `npm ci`, then run `npx firebase emulators:exec --only
 - On Dashboard → Projects, choose Due today/this week/this month or Active today/this week/this month, then a folder and/or project. Weeks run Monday through Sunday. Active means the project date range overlaps the chosen day/week/month, and requires both start and target dates. Completed, cancelled, and archived projects stay out of these views.
 - Choose main, second, and third order independently: Title alphabetically, Importance from Critical to Low, Due date earliest first (undated last).
 - To repeat a task, select **Daily after completion** and **Repeat until** in its task form. A completed occurrence remains in history; one new occurrence due the next day is created only when completed and only through the chosen end date. Unfinished tasks stay open without making duplicates.
+
+## Workspace download and screen capture
+
+The application does not offer a workspace export/download command. Its JSON import remains available. Google Drive and external resource links follow permissions on their destination service; remove a person’s access there separately when necessary. A person permitted to view data in a browser can still copy it with developer tools, browser features, or a camera. The website cannot enforce Android `FLAG_SECURE` or reliably block operating-system screenshots; this requires an Android application controlling its own native window. Do not treat removal of the export button as protection against copying.

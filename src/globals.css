@@ -81,3 +81,7 @@ img.brandmark,img.gate-logo{object-fit:cover;display:block;flex:none}img.brandma
 .dark .request-row{border-color:var(--border)}
 .account-strip .workspace-choice.selected{background:var(--surface);color:var(--text);border:1px solid var(--border);font-weight:700}
 .share-form{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 24px}.share-form input{min-width:220px;flex:1}.share-form input,.share-form select{padding:9px 12px;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px}
+
+.theme-toggle{display:inline-flex;align-items:center;justify-content:center;gap:7px;flex:none;min-height:38px;padding:7px 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface2);color:var(--text);font-size:13px;font-weight:700;white-space:nowrap}.theme-toggle:hover,.theme-toggle:focus-visible{border-color:var(--blue);outline-color:var(--blue)}.theme-toggle svg{flex:none}@media(max-width:900px){.theme-toggle .theme-label{display:none}.theme-toggle{width:38px;padding:7px}}
+
+@media(max-width:760px){.header .import-label{display:none}.header{gap:8px}.searchbox{min-width:0}.header-right{flex:none;gap:5px}}
