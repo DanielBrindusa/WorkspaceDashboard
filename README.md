@@ -1,6 +1,6 @@
-# Daniel Workspace · GitHub Pages + Firebase
+# WorkspaceDashboard · GitHub Pages + Firebase
 
-Private records and Google sign-in for the Daniel Workspace application. The GitHub Pages shell is publicly accessible; Firestore rules guard every record. No workspace records or sample personal data are committed to this repository. Owner edits; approved visitors can read only.
+Private records and Google sign-in for the WorkspaceDashboard application. The GitHub Pages shell is publicly accessible; Firestore rules guard every record. No workspace records or sample personal data are committed to this repository. Owner edits; approved visitors can read only.
 
 ## Firebase setup
 
@@ -9,7 +9,7 @@ Private records and Google sign-in for the Daniel Workspace application. The Git
 3. Create `.env.local` from `.env.example` for local development. Fill Firebase Web app configuration values. These identifiers become public in the JavaScript bundle and are **not secrets**. Do not put admin SDK keys in this project.
 4. Run `npm ci && npm run dev`, sign in with your own Google account. The app shows your Google Auth UID. In Firestore Console, create document `config/owner` with string field `uid` equal to that exact UID. Refresh. Only the Firebase console/admin may change ownership.
 5. In Firebase Authentication → Settings → Authorized domains, add the GitHub Pages domain, typically `YOURNAME.github.io` (domain only). If Google popup reports `auth/unauthorized-domain`, check this setting.
-6. From the current private Daniel Workspace, click the header export icon and download JSON. In this app, use **Import** in the header while signed in as owner. Import overwrites matching IDs; keep the JSON backup. The first launch is intentionally empty until you import records.
+6. From the original private workspace, click the header export icon and download JSON. In this app, use **Import** in the header while signed in as owner. Import overwrites matching IDs; keep the JSON backup. The first launch is intentionally empty until you import records.
 
 ## GitHub Pages deployment
 
