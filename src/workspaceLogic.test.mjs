@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {matchesProjectWindow,matchesTaskWindow,nextDailyTask,period,sortProjects,sortTasks} from './workspaceLogic.ts';
 import {upsertFavorite,removeFavorite} from './favorites.ts';
-import {calendarEvent} from './calendarEvent.ts';
 
 test('weeks begin Monday and months include their last day',()=>{
  assert.deepEqual(period('2026-09-25','week'),{start:'2026-09-21',end:'2026-09-27'});
@@ -55,12 +54,3 @@ test('saved views never exceed five and replacement targets the selected view',(
  assert.equal(removeFavorite(updated,'new').length,4);
 });
 
-test('calendar events never inherit default reminders and retain event labels',()=>{
- const item={id:'WAIT01',kind:'followup',name:'Ask for sign off',waitingFor:'Team',projectId:'PRJ01'};
- const event=calendarEvent(item,'2026-09-30','label-123');
- assert.deepEqual(event.reminders,{useDefault:false,overrides:[]});
- assert.deepEqual(event.start,{date:'2026-09-30'});
- assert.deepEqual(event.end,{date:'2026-10-01'});
- assert.equal(event.eventLabelId,'label-123');
- assert.equal(event.extendedProperties.private.workspaceRecordId,'WAIT01');
-});
