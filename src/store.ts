@@ -8,7 +8,7 @@ export async function listRecords(workspaceUid:string):Promise<RecordItem[]>{con
 export async function putRecord(workspaceUid:string,item:RecordItem){await setDoc(record(workspaceUid,item.id),clean(item))}
 export async function deleteProjectRecords(workspaceUid:string,projectId:string,linked:{id:string,kind:string}[],contacts:RecordItem[]){const batch=writeBatch(db);for(const item of [{id:projectId,kind:'project'},...linked])batch.set(record(workspaceUid,item.id),{...item,deleted:true});for(const contact of contacts)batch.set(record(workspaceUid,contact.id),clean(contact));await batch.commit()}
 export async function importRecords(workspaceUid:string,items:RecordItem[]){for(let i=0;i<items.length;i+=400){const batch=writeBatch(db);for(const item of items.slice(i,i+400))batch.set(record(workspaceUid,item.id),clean(item));await batch.commit()}}
-export async function completeTask(workspaceUid:string,task:RecordItem,completedOn:string):Promise<RecordItem|null>{
+export async function completeTask(workspaceUid:string,task:RecordItem,completedOn:string,activity?:RecordItem):Promise<RecordItem|null>{
  const done=clean({...task,status:'Done',completed:completedOn,updatedAt:new Date().toISOString()});
  const next=nextDailyTask(task,completedOn);
  return runTransaction(db,async tx=>{
@@ -20,6 +20,7 @@ export async function completeTask(workspaceUid:string,task:RecordItem,completed
   const existing=nextRef?await tx.get(nextRef):null;
   tx.set(currentRef,done);
   if(next&&nextRef&&!existing?.exists())tx.set(nextRef,clean(next));
+  if(activity)tx.set(record(workspaceUid,activity.id),clean(activity));
   return next&&!existing?.exists()?next:null;
  });
 }
