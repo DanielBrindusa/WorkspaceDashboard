@@ -1,0 +1,29 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {matchesProjectWindow,nextDailyTask,period,sortProjects} from './workspaceLogic.ts';
+
+test('weeks begin Monday and months include their last day',()=>{
+ assert.deepEqual(period('2026-09-25','week'),{start:'2026-09-21',end:'2026-09-27'});
+ assert.deepEqual(period('2026-09-25','month'),{start:'2026-09-01',end:'2026-09-30'});
+ assert.deepEqual(period('2026-02-12','month'),{start:'2026-02-01',end:'2026-02-28'});
+});
+test('active project windows use interval overlap and due windows use due date',()=>{
+ const project={id:'PRJ001',kind:'project',start:'2026-08-01',due:'2026-09-21'};
+ assert.equal(matchesProjectWindow(project,'Active this week','2026-09-25'),true);
+ assert.equal(matchesProjectWindow(project,'Active today','2026-09-25'),false);
+ assert.equal(matchesProjectWindow(project,'Due this month','2026-09-25'),true);
+ assert.equal(matchesProjectWindow(project,'Due today','2026-09-25'),false);
+ assert.equal(matchesProjectWindow({id:'x',kind:'project',due:'2026-09-25'},'Active today','2026-09-25'),false);
+});
+test('sort levels break ties in order, with undated projects last',()=>{
+ const rows=[{id:'a',kind:'project',name:'Beta',priority:'High',due:'2026-09-26'},{id:'b',kind:'project',name:'Alpha',priority:'Critical',due:'2026-09-26'},{id:'c',kind:'project',name:'Gamma',priority:'Critical',due:'2026-09-27'},{id:'d',kind:'project',name:'None',priority:'Low'}];
+ assert.deepEqual(sortProjects(rows,['Due date','Importance','Title']).map(p=>p.id),['b','a','c','d']);
+});
+test('daily tasks generate once for next day through inclusive end date',()=>{
+ const item={id:'TSK001',kind:'task',name:'Check inbox',status:'To Do',due:'2026-09-25',recurrence:'daily',recurrenceEnd:'2026-09-27'};
+ const next=nextDailyTask(item,'2026-09-25');
+ assert.equal(next?.due,'2026-09-26');
+ assert.equal(next?.id,'RCR_TSK001_20260926');
+ assert.equal(next?.status,'To Do');
+ assert.equal(nextDailyTask({...item,due:'2026-09-27'},'2026-09-27'),null);
+});

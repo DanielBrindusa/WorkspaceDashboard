@@ -25,3 +25,10 @@ Signed-in visitors see a **Request access** button. Owner sees pending requests 
 ## Development
 
 `npm run build` checks TypeScript and builds the static site. The `VITE_BASE` build variable sets GitHub's repository subpath; local development defaults to `/`. Edit `firestore.rules` whenever access behavior changes, and deploy the rules separately from the Pages workflow.
+
+## Project folders, dashboard views, and recurring tasks
+
+- Create a folder from **Folders → + Folder**, or from **+ Add**. Each project has an optional Folder field. Deleting a folder leaves its projects in place and removes the folder association. Archived folders appear in Archive.
+- On Dashboard → Projects, choose Due today/this week/this month or Active today/this week/this month, then a folder and/or project. Weeks run Monday through Sunday. Active means the project date range overlaps the chosen day/week/month, and requires both start and target dates. Completed, cancelled, and archived projects stay out of these views.
+- Choose main, second, and third order independently: Title alphabetically, Importance from Critical to Low, Due date earliest first (undated last).
+- To repeat a task, select **Daily after completion** and **Repeat until** in its task form. A completed occurrence remains in history; one new occurrence due the next day is created only when completed and only through the chosen end date. Unfinished tasks stay open without making duplicates.
