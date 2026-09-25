@@ -85,3 +85,6 @@ img.brandmark,img.gate-logo{object-fit:cover;display:block;flex:none}img.brandma
 .theme-toggle{display:inline-flex;align-items:center;justify-content:center;gap:7px;flex:none;min-height:38px;padding:7px 10px;border:1px solid var(--border);border-radius:9px;background:var(--surface2);color:var(--text);font-size:13px;font-weight:700;white-space:nowrap}.theme-toggle:hover,.theme-toggle:focus-visible{border-color:var(--blue);outline-color:var(--blue)}.theme-toggle svg{flex:none}@media(max-width:900px){.theme-toggle .theme-label{display:none}.theme-toggle{width:38px;padding:7px}}
 
 @media(max-width:760px){.header .import-label{display:none}.header{gap:8px}.searchbox{min-width:0}.header-right{flex:none;gap:5px}}
+/* Account controls occupy their own row; they must never cover the workspace header. */
+.site-wrap>.account-strip{position:relative;inset:auto;right:auto;top:auto;z-index:20;display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;min-height:55px;width:100%;padding:7px 20px;border:0;border-bottom:1px solid var(--border);border-radius:0;background:var(--surface);box-shadow:none}
+@media(max-width:800px){.site-wrap>.account-strip{padding:7px 12px;justify-content:flex-start;gap:2px}.site-wrap>.account-strip span{width:auto;overflow:hidden;text-overflow:ellipsis}}
