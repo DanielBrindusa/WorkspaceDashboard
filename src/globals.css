@@ -88,3 +88,5 @@ img.brandmark,img.gate-logo{object-fit:cover;display:block;flex:none}img.brandma
 /* Account controls occupy their own row; they must never cover the workspace header. */
 .site-wrap>.account-strip{position:relative;inset:auto;right:auto;top:auto;z-index:20;display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;min-height:55px;width:100%;padding:7px 20px;border:0;border-bottom:1px solid var(--border);border-radius:0;background:var(--surface);box-shadow:none}
 @media(max-width:800px){.site-wrap>.account-strip{padding:7px 12px;justify-content:flex-start;gap:2px}.site-wrap>.account-strip span{width:auto;overflow:hidden;text-overflow:ellipsis}}
+.dark .account-strip button,.dark .request-row button{background:var(--surface2);color:var(--text);border-color:var(--border)}
+.dark .gate{background:var(--bg);color:var(--text)}.dark .gate-card{background:var(--surface);border-color:var(--border);box-shadow:var(--shadow)}.dark .gate p{color:var(--muted)}.dark .gate button{background:var(--surface2);color:var(--text);border-color:var(--border)}.dark .gate .gate-primary{background:var(--blue);color:var(--bg);border-color:var(--blue)}

@@ -5,11 +5,11 @@ Private records and Google sign-in for the WorkspaceDashboard application. The G
 ## Firebase setup
 
 1. Create a Firebase project, add a Web app, enable **Authentication → Sign-in method → Google**, and create a Firestore database. Prefer a dedicated project to keep workspace records separate from other apps.
-2. Deploy `firestore.rules` **before importing any data**. With the Firebase CLI: `firebase deploy --only firestore:rules --project YOUR_PROJECT_ID` (a `firebase.json` is provided). Or paste the file into Firestore → Rules and publish it. Firebase defaults must not be used for private records.
+2. Deploy `firestore.rules` **before saving any data**. With the Firebase CLI: `firebase deploy --only firestore:rules --project YOUR_PROJECT_ID` (a `firebase.json` is provided). Or paste the file into Firestore → Rules and publish it. Firebase defaults must not be used for private records.
 3. Create `.env.local` from `.env.example` for local development. Fill Firebase Web app configuration values. These identifiers become public in the JavaScript bundle and are **not secrets**. Do not put admin SDK keys in this project.
 4. Run `npm ci && npm run dev`, sign in with your own Google account. The app shows your Google Auth UID. In Firestore Console, create document `config/owner` with string field `uid` equal to that exact UID. Refresh. Only the Firebase console/admin may change ownership.
 5. In Firebase Authentication → Settings → Authorized domains, add the GitHub Pages domain, typically `YOURNAME.github.io` (domain only). If Google popup reports `auth/unauthorized-domain`, check this setting.
-6. On a new installation, use **Import** to bring in a JSON backup if you already have one. Existing installations migrate their Firestore records automatically when multiuser mode is enabled.
+6. Existing installations migrate their Firestore records automatically when multiuser mode is enabled.
 
 ## GitHub Pages deployment
 
@@ -49,4 +49,4 @@ Install dependencies with `npm ci`, then run `npx firebase emulators:exec --only
 
 ## Workspace download and screen capture
 
-The application does not offer a workspace export/download command. Its JSON import remains available. Google Drive and external resource links follow permissions on their destination service; remove a person’s access there separately when necessary. A person permitted to view data in a browser can still copy it with developer tools, browser features, or a camera. The website cannot enforce Android `FLAG_SECURE` or reliably block operating-system screenshots; this requires an Android application controlling its own native window. Do not treat removal of the export button as protection against copying.
+The application does not offer workspace import or export controls. Google Drive and external resource links follow permissions on their destination service; remove a person’s access there separately when necessary. A person permitted to view data in a browser can still copy it with developer tools, browser features, or a camera. The website cannot enforce Android `FLAG_SECURE` or reliably block operating-system screenshots; this requires an Android application controlling its own native window. Do not treat removal of the export button as protection against copying.
