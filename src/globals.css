@@ -90,3 +90,12 @@ img.brandmark,img.gate-logo{object-fit:cover;display:block;flex:none}img.brandma
 @media(max-width:800px){.site-wrap>.account-strip{padding:7px 12px;justify-content:flex-start;gap:2px}.site-wrap>.account-strip span{width:auto;overflow:hidden;text-overflow:ellipsis}}
 .dark .account-strip button,.dark .request-row button{background:var(--surface2);color:var(--text);border-color:var(--border)}
 .dark .gate{background:var(--bg);color:var(--text)}.dark .gate-card{background:var(--surface);border-color:var(--border);box-shadow:var(--shadow)}.dark .gate p{color:var(--muted)}.dark .gate button{background:var(--surface2);color:var(--text);border-color:var(--border)}.dark .gate .gate-primary{background:var(--blue);color:var(--bg);border-color:var(--blue)}
+
+/* Keep the sharing footer within the same scroll region as the sticky sidebar. */
+.site-wrap{display:grid;grid-template-columns:232px minmax(0,1fr);align-content:start;min-height:100vh}
+.site-wrap>.account-strip{grid-column:1/-1}
+.site-wrap>.app{display:contents}
+.site-wrap>.app>.sidebar{grid-column:1;grid-row:2 / span 3;align-self:start;min-height:100vh}
+.site-wrap>.app>.shell{grid-column:2;grid-row:2;min-width:0;min-height:100vh}
+.site-wrap>.access-panel{grid-column:2;min-width:0;width:calc(100% - 48px);max-width:1520px;margin:0 auto 24px}
+@media(max-width:760px){.site-wrap{grid-template-columns:minmax(0,1fr)}.site-wrap>.app>.sidebar{display:none}.site-wrap>.app>.shell,.site-wrap>.access-panel{grid-column:1}.site-wrap>.access-panel{width:calc(100% - 28px);margin-bottom:85px}}
