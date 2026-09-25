@@ -1,0 +1,31 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function owner() { return signedIn() && exists(/databases/$(database)/documents/config/owner) && get(/databases/$(database)/documents/config/owner).data.uid == request.auth.uid; }
+    function approved() {
+      return signedIn() && exists(/databases/$(database)/documents/grants/$(request.auth.uid))
+        && get(/databases/$(database)/documents/grants/$(request.auth.uid)).data.active == true
+        && (get(/databases/$(database)/documents/grants/$(request.auth.uid)).data.permanent == true
+          || (get(/databases/$(database)/documents/grants/$(request.auth.uid)).data.expiresAt is timestamp
+            && request.time < get(/databases/$(database)/documents/grants/$(request.auth.uid)).data.expiresAt));
+    }
+    match /config/owner { allow get: if signedIn(); allow list, write: if false; }
+    match /requests/{uid} {
+      allow get: if owner() || signedIn() && request.auth.uid == uid;
+      allow list: if owner();
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['uid','email','name','status','requestedAt'])
+        && request.resource.data.uid == uid && request.resource.data.email == request.auth.token.email
+        && request.resource.data.status == 'pending' && request.resource.data.requestedAt == request.time;
+      allow update: if owner() || signedIn() && request.auth.uid == uid
+        && resource.data.status != 'pending' && request.resource.data.keys().hasOnly(['uid','email','name','status','requestedAt'])
+        && request.resource.data.uid == uid && request.resource.data.email == request.auth.token.email
+        && request.resource.data.status == 'pending' && request.resource.data.requestedAt == request.time;
+      allow delete: if owner();
+    }
+    match /grants/{uid} { allow get: if owner() || signedIn() && request.auth.uid == uid; allow list, write: if owner(); }
+    match /records/{id} { allow read: if owner() || approved(); allow write: if owner() && request.resource.data.id == id; allow delete: if owner(); }
+    match /{document=**} { allow read, write: if false; }
+  }
+}
