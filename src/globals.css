@@ -79,3 +79,5 @@ img.brandmark,img.gate-logo{object-fit:cover;display:block;flex:none}img.brandma
 .dark .gate .gate-primary{background:#286a56;border-color:#286a56;color:#fff}
 .dark .gate-uid{background:var(--surface2)}
 .dark .request-row{border-color:var(--border)}
+.account-strip .workspace-choice.selected{background:var(--surface);color:var(--text);border:1px solid var(--border);font-weight:700}
+.share-form{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 24px}.share-form input{min-width:220px;flex:1}.share-form input,.share-form select{padding:9px 12px;border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px}

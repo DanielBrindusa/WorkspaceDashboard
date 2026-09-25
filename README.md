@@ -1,6 +1,6 @@
 # WorkspaceDashboard · GitHub Pages + Firebase
 
-Private records and Google sign-in for the WorkspaceDashboard application. The GitHub Pages shell is publicly accessible; Firestore rules guard every record. No workspace records or sample personal data are committed to this repository. Owner edits; approved visitors can read only.
+Private records and Google sign-in for the WorkspaceDashboard application. The GitHub Pages shell is publicly accessible; Firestore rules guard every record. No workspace records or sample personal data are committed to this repository. Each signed-in Google account owns a separate private workspace. The primary owner may grant read-only access to their workspace.
 
 ## Firebase setup
 
@@ -18,9 +18,23 @@ Private records and Google sign-in for the WorkspaceDashboard application. The G
 3. Settings → Pages → Build and deployment → Source: **GitHub Actions**. The included workflow builds and publishes to `https://danielbrindusa.github.io/WorkspaceDashboard/` on pushes to `main`.
 4. Add `YOURNAME.github.io` to Firebase Auth authorized domains, then visit the deployed page and sign in.
 
-## Access control
+## Multiuser security rollout for an existing deployment
 
-Signed-in visitors see a **Request access** button. Owner sees pending requests at the bottom of the workspace, may reject or grant 5, 10, 24, 48 hours or unlimited, and can revoke an active grant. Firestore rules check grant expiry on every record read using server time. Approved visitors are read-only. Never send an exported JSON file to someone you do not wish to give a copy of the records.
+The deployed app continues using its existing access model until the Firebase rules have been published and the new mode is activated. This prevents moving existing data under rules that have not yet been deployed.
+
+1. Keep a local JSON export of your workspace. From this repository, publish the exact contents of `firestore.rules` in Firebase Console → **Build → Firestore Database → Rules → Publish**, or use `npx firebase deploy --only firestore:rules --project YOUR_PROJECT_ID` with Firebase CLI login. This security step is separate from GitHub Pages; pushing a file to GitHub never deploys Firestore rules.
+2. In GitHub repository **Settings → Secrets and variables → Actions → Variables → New repository variable**, create `MULTIUSER_ENABLED` with value `true`. Then open **Actions → Deploy GitHub Pages → Run workflow → Run workflow** to rebuild the site. If the new Actions page does not appear, push a commit or rerun the latest deployment workflow.
+3. Sign in as the primary owner. The first load copies existing root `records` to `workspaces/OWNER_UID/records` and writes a migration marker. Wait for it to complete and check your projects. Existing records remain at their original path, accessible only to the owner. Do not delete them until you have verified the move and backed up your data.
+4. A different Google account now opens its own private, initially empty dashboard. It can request your dashboard; alternatively you can share by verified Google email for 5, 10, 24, 48 hours, or unlimited. It switches between **My dashboard** and **Shared dashboard** when allowed. Your shares allow reading only. Revoke from **Sharing → Active access**. If the same person has both an account grant and an email invite, revoke both entries.
+5. To roll back the interface, remove `MULTIUSER_ENABLED` or set it to `false` and rerun the Pages workflow. The old interface still uses the owner-only legacy records; new per-user records remain private under the new rules.
+
+Firestore rules enforce isolation on the server. A copied web API key, Firebase project ID, or GitHub Actions variable does not grant permission to read records. These web configuration values appear in the public site bundle. Never commit an Admin SDK service account, OAuth client secret, private key, or privileged token. Firebase Console → Google Cloud Console → APIs & Services → Credentials: restrict the Firebase Web API key to only the Firebase APIs it needs, and check the allowed websites carefully against Firebase Auth behavior. Enable Firebase App Check with a suitable web provider for abuse protection, then monitor metrics before enforcing it for Firestore. App Check supplements the rules; it does not replace account authorization.
+
+A visitor who has previously viewed or exported records may retain copies after revocation. Sharing permissions control future server reads only. The owner can currently share their primary dashboard; other account owners cannot share their own dashboard through the current UI.
+
+## Test the rules
+
+Install dependencies with `npm ci`, then run `npx firebase emulators:exec --only firestore --project workspace-dashboard-rules-test 'node --test tests/firestore.rules.test.mjs'`. The tests exercise cross-account isolation, read-only shares, expiration, revocation, verified Google login, and legacy migration access.
 
 ## Development
 
