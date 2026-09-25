@@ -1,3 +1,5 @@
+import {saveFavorite,deleteFavorite} from './favoritesStore';
+import {FAVORITES_ID,type FavoriteView} from './favorites';
 import {listRecords,putRecord,deleteProjectRecords,deleteFolderRecords,completeTask} from './legacyStore';
 'use client';
 import {useEffect,useMemo,useRef,useState} from 'react';
@@ -24,11 +26,68 @@ function Panel({title,action,children}:{title:string,action?:React.ReactNode,chi
 function DataTable({heads,rows}:{heads:string[],rows:React.ReactNode[][]}){return <div className="tablewrap"><Table><TableHeader><TableRow>{heads.map(h=><TableHead key={h}>{h}</TableHead>)}</TableRow></TableHeader><TableBody>{rows.map((cells,i)=><TableRow key={i}>{cells.map((c,j)=><TableCell key={j}>{c}</TableCell>)}</TableRow>)}</TableBody></Table>{rows.length===0&&<div className="empty">No matching items.</div>}</div>}
 function ProgressCell({value}:{value?:number}){const n=Math.max(0,Math.min(100,value||0));const color=n===100?'#16825d':n>=75?'#14977f':n>=50?'#2863d8':n>=25?'#d48718':'#cd5545';return <div className="progressbox"><Progress aria-label={`${n}% complete`} value={n} className="progress" style={{'--progress-fill':color} as React.CSSProperties}/><span>{n}%</span></div>}
 export default function Workspace({readOnly=false}:{readOnly?:boolean}){
- const [records,setRecords]=useState<RecordItem[]>(sample),[section,setSection]=useState('Dashboard'),[selected,setSelected]=useState<string|null>(null),[query,setQuery]=useState(''),[searchOpen,setSearchOpen]=useState(false),[filter,setFilter]=useState(''),[status,setStatus]=useState('All'),[area,setArea]=useState('All'),[priority,setPriority]=useState('All'),[folderFilter,setFolderFilter]=useState('All'),[projectFilter,setProjectFilter]=useState('All'),[windowFilter,setWindowFilter]=useState<ProjectWindow>('All'),[sortLevels,setSortLevels]=useState<[SortKey,SortKey,SortKey]>(['Due date','Importance','Title']),[taskView,setTaskView]=useState('My Focus'),[taskSearch,setTaskSearch]=useState(''),[taskStatus,setTaskStatus]=useState('All'),[taskArea,setTaskArea]=useState('All'),[taskPriority,setTaskPriority]=useState('All'),[taskFolderFilter,setTaskFolderFilter]=useState('All'),[taskProjectFilter,setTaskProjectFilter]=useState('All'),[taskWindowFilter,setTaskWindowFilter]=useState<ProjectWindow>('All'),[taskSortLevels,setTaskSortLevels]=useState<[SortKey,SortKey,SortKey]>(['Due date','Importance','Title']),[modal,setModal]=useState<string|null>(null),[editing,setEditing]=useState<RecordItem|null>(null),[form,setForm]=useState<RecordItem>({id:'',kind:'task'}),[error,setError]=useState(''),[saving,setSaving]=useState(false),[deleting,setDeleting]=useState(false),[confirmItem,setConfirmItem]=useState<RecordItem|null>(null),[sourceInbox,setSourceInbox]=useState<RecordItem|null>(null),[dark,setDark]=useState(()=>localStorage.getItem('workspace-theme-v2')!=='light'),[loaded,setLoaded]=useState(false);
+ const [records,setRecords]=useState<RecordItem[]>(sample),[section,setSection]=useState('Dashboard'),[selected,setSelected]=useState<string|null>(null),[query,setQuery]=useState(''),[searchOpen,setSearchOpen]=useState(false),[filter,setFilter]=useState(''),[status,setStatus]=useState('All'),[area,setArea]=useState('All'),[priority,setPriority]=useState('All'),[folderFilter,setFolderFilter]=useState('All'),[projectFilter,setProjectFilter]=useState('All'),[windowFilter,setWindowFilter]=useState<ProjectWindow>('All'),[sortLevels,setSortLevels]=useState<[SortKey,SortKey,SortKey]>(['Due date','Importance','Title']),[taskView,setTaskView]=useState('My Focus'),[taskSearch,setTaskSearch]=useState(''),[taskStatus,setTaskStatus]=useState('All'),[taskArea,setTaskArea]=useState('All'),[taskPriority,setTaskPriority]=useState('All'),[taskFolderFilter,setTaskFolderFilter]=useState('All'),[taskProjectFilter,setTaskProjectFilter]=useState('All'),[taskWindowFilter,setTaskWindowFilter]=useState<ProjectWindow>('All'),[taskSortLevels,setTaskSortLevels]=useState<[SortKey,SortKey,SortKey]>(['Due date','Importance','Title']),[modal,setModal]=useState<string|null>(null),[editing,setEditing]=useState<RecordItem|null>(null),[form,setForm]=useState<RecordItem>({id:'',kind:'task'}),[error,setError]=useState(''),[saving,setSaving]=useState(false),[deleting,setDeleting]=useState(false),[confirmItem,setConfirmItem]=useState<RecordItem|null>(null),[sourceInbox,setSourceInbox]=useState<RecordItem|null>(null),[dark,setDark]=useState(()=>localStorage.getItem('workspace-theme-v2')!=='light'),[loaded,setLoaded]=useState(false),[favoriteName,setFavoriteName]=useState(''),[replaceFavoriteId,setReplaceFavoriteId]=useState(''),[selectedProjectFavorite,setSelectedProjectFavorite]=useState(''),[selectedTaskFavorite,setSelectedTaskFavorite]=useState(''),[favoriteBusy,setFavoriteBusy]=useState(false),[favoriteMessage,setFavoriteMessage]=useState('');
  const searchRef=useRef<HTMLInputElement>(null);
  useEffect(()=>{let active=true;listRecords().then(records=>({records})).then(d=>{if(active){setRecords(prev=>{let map=new Map(prev.map(x=>[x.id,x]));((d as {records:RecordItem[]}).records).forEach(x=>map.set(x.id,x));return [...map.values()]});setLoaded(true)}}).catch(()=>{if(active)setError('Saved changes are temporarily unavailable. Sample data is still shown.')});return()=>{active=false}},[]);
  useEffect(()=>{document.documentElement.classList.toggle('dark',dark);localStorage.setItem('workspace-theme-v2',dark?'dark':'light')},[dark]);
  useEffect(()=>{const onKey=(e:KeyboardEvent)=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();searchRef.current?.focus();setSearchOpen(true)}if(e.key==='Escape')setSearchOpen(false)};window.addEventListener('keydown',onKey);return()=>window.removeEventListener('keydown',onKey)},[]);
+ const favorites=records.find(r=>r.id===FAVORITES_ID&&!r.deleted)?.favoriteViews||[];
+ const syncFavorites=(views:FavoriteView[])=>setRecords(prev=>[...prev.filter(r=>r.id!==FAVORITES_ID),{id:FAVORITES_ID,kind:'settings',favoriteViews:views}]);
+ const applyFavorite=(view:FavoriteView)=>{
+  const config=view.settings;
+  if(view.scope==='projects'){
+   setWindowFilter(config.windowFilter);setFolderFilter(config.folderFilter);setProjectFilter(config.projectFilter);
+   setSortLevels([...config.sortLevels]);setSelectedProjectFavorite(view.id);
+  }else{
+   setTaskView(config.taskView||'My Focus');setTaskSearch(config.search||'');setTaskStatus(config.status||'All');
+   setTaskArea(config.area||'All');setTaskPriority(config.priority||'All');setTaskWindowFilter(config.windowFilter);
+   setTaskFolderFilter(config.folderFilter);setTaskProjectFilter(config.projectFilter);
+   setTaskSortLevels([...config.sortLevels]);setSelectedTaskFavorite(view.id);
+  }
+  setFavoriteMessage('');
+ };
+ const saveCurrentFavorite=async(scope:FavoriteView['scope'])=>{
+  if(readOnly||favoriteBusy)return;
+  const name=favoriteName.trim();
+  if(!name){setFavoriteMessage('Enter a name for this view.');return}
+  if(favorites.length>=5&&!replaceFavoriteId){setFavoriteMessage('Choose a saved view to replace.');return}
+  const settings:FavoriteView['settings']=scope==='projects'
+   ?{windowFilter,folderFilter,projectFilter,sortLevels:[...sortLevels]}
+   :{windowFilter:taskWindowFilter,folderFilter:taskFolderFilter,projectFilter:taskProjectFilter,sortLevels:[...taskSortLevels],taskView,search:taskSearch,status:taskStatus,area:taskArea,priority:taskPriority};
+  const view:FavoriteView={id:'VIEW_'+crypto.randomUUID(),name,scope,settings};
+  setFavoriteBusy(true);setFavoriteMessage('');
+  try{const updated=await saveFavorite(null,view,favorites.length>=5?replaceFavoriteId:undefined);
+   syncFavorites(updated);setFavoriteName('');setReplaceFavoriteId('');
+   if(scope==='projects')setSelectedProjectFavorite(view.id);else setSelectedTaskFavorite(view.id);
+   setFavoriteMessage('Saved view.');
+  }catch(e){setFavoriteMessage(e instanceof Error?e.message:'Could not save the view.')}finally{setFavoriteBusy(false)}
+ };
+ const removeSelectedFavorite=async(scope:FavoriteView['scope'])=>{
+  if(readOnly||favoriteBusy)return;
+  const id=scope==='projects'?selectedProjectFavorite:selectedTaskFavorite;
+  if(!id)return;
+  setFavoriteBusy(true);setFavoriteMessage('');
+  try{const updated=await deleteFavorite(null,id);syncFavorites(updated);
+   if(scope==='projects')setSelectedProjectFavorite('');else setSelectedTaskFavorite('');
+   setFavoriteMessage('Saved view removed.');
+  }catch(e){setFavoriteMessage(e instanceof Error?e.message:'Could not remove the view.')}finally{setFavoriteBusy(false)}
+ };
+ const favoriteControls=(scope:FavoriteView['scope'])=>{
+  const available=favorites.filter(v=>v.scope===scope);
+  const chosen=scope==='projects'?selectedProjectFavorite:selectedTaskFavorite;
+  const setChosen=scope==='projects'?setSelectedProjectFavorite:setSelectedTaskFavorite;
+  return <div className="favorite-bar"><span className="favorite-count">Saved views {favorites.length}/5</span>
+   <select aria-label={scope==='projects'?'Saved project views':'Saved task views'} value={chosen} onChange={e=>{const id=e.target.value;setChosen(id);const view=available.find(v=>v.id===id);if(view)applyFavorite(view)}}><option value="">Choose saved view</option>{available.map(view=><option key={view.id} value={view.id}>{view.name}</option>)}</select>
+   {chosen&&available.some(view=>view.id===chosen)&&<button className="outline" onClick={()=>{const view=available.find(v=>v.id===chosen);if(view)applyFavorite(view)}}>Apply</button>}
+   {!readOnly&&<>
+    {chosen&&available.some(view=>view.id===chosen)&&<button className="outline" disabled={favoriteBusy} onClick={()=>removeSelectedFavorite(scope)}>Remove</button>}
+    <input aria-label="New saved view name" placeholder="Name this view" maxLength={60} value={favoriteName} onChange={e=>setFavoriteName(e.target.value)}/>
+    {favorites.length>=5&&<select aria-label="View to replace" value={replaceFavoriteId} onChange={e=>setReplaceFavoriteId(e.target.value)}><option value="">Choose one to replace</option>{favorites.map(view=><option key={view.id} value={view.id}>{view.name} · {view.scope==='projects'?'Projects':'Tasks'}</option>)}</select>}
+    <button className="outline" disabled={favoriteBusy||!loaded||!favoriteName.trim()||(favorites.length>=5&&!replaceFavoriteId)} onClick={()=>saveCurrentFavorite(scope)}>{favoriteBusy?'Saving…':favorites.length>=5?'Replace view':'Save view'}</button>
+   </>}
+   {favoriteMessage&&<span className="favorite-message" role="status">{favoriteMessage}</span>}
+  </div>;
+ };
  const by=(kind:string)=>records.filter(r=>r.kind===kind&&!r.deleted&&!r.archived); const folders=by('folder'),projects=by('project'),tasks=by('task'),activities=by('activity').sort((a,b)=>(b.date||'').localeCompare(a.date||'')),notes=by('note'),contacts=by('contact'),resources=by('resource'),inbox=by('inbox').filter(r=>r.status!=='Processed');
  const projectName=(id?:string)=>projects.find(x=>x.id===id)?.name||'No project';
  const folderName=(id?:string)=>folders.find(x=>x.id===id)?.name||'No folder';
@@ -98,6 +157,7 @@ export default function Workspace({readOnly=false}:{readOnly?:boolean}){
     <label>Project<select aria-label="Dashboard project" value={projectFilter} onChange={e=>setProjectFilter(e.target.value)}><option value="All">All projects</option>{projects.filter(p=>!isArchived(p)).map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select></label>
     {(['Main order','Second order','Third order'] as const).map((label,i)=><label key={label}>{label}<select aria-label={label} value={sortLevels[i]} onChange={e=>setSortLevel(i,e.target.value as SortKey)}>{sortKeys.filter(x=>i>0||x!=='None').map(x=><option key={x} value={x}>{x}</option>)}</select></label>)}
    </div>
+   {favoriteControls('projects')}
    <div className="filter-context">{dashboardProjects.length} {dashboardProjects.length===1?'project':'projects'} · Weeks start Monday · Active views show projects whose start and target dates overlap the selected period.</div>
    {projectTable(dashboardProjects)}
   </Panel>
@@ -132,6 +192,7 @@ export default function Workspace({readOnly=false}:{readOnly?:boolean}){
   <label>Priority<select aria-label="Task priority filter" value={taskPriority} onChange={e=>setTaskPriority(e.target.value)}>{['All',...options.priority].map(x=><option key={x} value={x}>{x==='All'?'All priorities':x}</option>)}</select></label>
   {(['Main order','Second order','Third order'] as const).map((label,i)=><label key={label}>{label}<select aria-label={'Task '+label.toLowerCase()} value={taskSortLevels[i]} onChange={e=>setTaskSortLevel(i,e.target.value as SortKey)}>{sortKeys.filter(x=>i>0||x!=='None').map(x=><option key={x} value={x}>{x}</option>)}</select></label>)}
  </div>
+ {favoriteControls('tasks')}
  <div className="filter-context">{filteredTasks.length} {filteredTasks.length===1?'task':'tasks'} · Weeks start Monday · Active views use start (or created) through due date. Filters combine with {taskView}.</div>
  {taskTable(filteredTasks)}</Panel></>):section==='Inbox'?<>{heading('Inbox','Capture first. Organize when you have time.',<button className="primary" onClick={()=>openForm('inbox')}>+ Capture</button>)}<Panel title={`${inbox.length} unprocessed items`}>{inbox.map(r=><div className="listrow" key={r.id}><Inbox className="tinyicon"/><div className="rowbody"><button className="rowlink" onClick={()=>openForm('inbox',r)}>{r.name}</button><p>{r.type||'Note'} · {r.notes||'No details yet'}</p></div>{actions(r)}<DropdownMenu><DropdownMenuTrigger asChild><button className="textlink">Organize ▾</button></DropdownMenuTrigger><DropdownMenuContent align="end">{['task','note','resource','contact'].map(kind=><DropdownMenuItem key={kind} onSelect={()=>convertInbox(r,kind)}>Make {kind==='resource'?'resource':kind}</DropdownMenuItem>)}<DropdownMenuItem onSelect={()=>patch(r,{status:'Processed'})}>Mark processed</DropdownMenuItem></DropdownMenuContent></DropdownMenu></div>)}{!inbox.length&&<div className="empty">Inbox clear. Add an idea, link or task anytime.</div>}</Panel></>:section==='Activity'?<>{heading('Activity','A chronological record of work across projects.',<button className="primary" onClick={()=>openForm('activity')}>+ Activity</button>)}<Panel title="History"><DataTable heads={['Date','Project','Activity','Result','Next step','Actions']} rows={activities.map(a=>[fmt(a.date),<button className="textlink" onClick={()=>open(a)}>{projectName(a.projectId)}</button>,<button className="rowlink" onClick={()=>openForm('activity',a)}>{a.name}</button>,a.result,a.next,actions(a)])}/></Panel></>:section==='Contacts'?(selectedRecord?.kind==='contact'?contactDetail(selectedRecord):<>{heading('Contacts','People and their related work.',<button className="primary" onClick={()=>openForm('contact')}>+ Contact</button>)}<Panel title="All Contacts"><DataTable heads={['Name','Company','Role','Projects','Last contact','Email','Actions']} rows={contacts.map(c=>[link(c),c.company,c.role,c.relatedProjects?.map(projectName).join(', '),fmt(c.lastContact),c.email||'—',actions(c)])}/></Panel></>):section==='Resources'?(selectedRecord?.kind==='resource'?<>{heading(nice(selectedRecord.name),selectedRecord.description,<button className="outline" onClick={()=>setSelected(null)}>← All resources</button>)}<Panel title="Resource Details"><dl className="pad kv"><dt>Type</dt><dd>{selectedRecord.type}</dd><dt>Project</dt><dd>{projectName(selectedRecord.projectId)}</dd><dt>URL</dt><dd>{validUrl(selectedRecord.url)?<a className="textlink" href={validUrl(selectedRecord.url)} target="_blank" rel="noreferrer">Open resource ↗</a>:'—'}</dd><dt>Tags</dt><dd>{selectedRecord.tags||'—'}</dd></dl></Panel><div style={{marginTop:15}}>{actions(selectedRecord)}</div></>:<>{heading('Resources','Find documentation, repositories and useful links.',<button className="primary" onClick={()=>openForm('resource')}>+ Link</button>)}<div className="filters"><input aria-label="Search resources" placeholder="Search resources" value={filter} onChange={e=>setFilter(e.target.value)}/><select aria-label="Resource type" value={status} onChange={e=>setStatus(e.target.value)}>{['All',...options.type].map(x=><option key={x}>{x}</option>)}</select></div><Panel title="Link Library"><DataTable heads={['Resource','Project','Type','Description','Tags','Open','Actions']} rows={resources.filter(r=>(status==='All'||r.type===status)&&(!filter||JSON.stringify(r).toLowerCase().includes(filter.toLowerCase()))).map(r=>[link(r),projectName(r.projectId),<Badge value={r.type}/>,r.description,r.tags,validUrl(r.url)?<a className="textlink" href={validUrl(r.url)} target="_blank" rel="noreferrer">Open ↗</a>:'—',actions(r)])}/></Panel><div style={{marginTop:16}}><Panel title="Notes & Decisions"><DataTable heads={['Note','Project','Date','Details','Actions']} rows={notes.filter(n=>!filter||JSON.stringify(n).toLowerCase().includes(filter.toLowerCase())).map(n=>[link(n),projectName(n.projectId),fmt(n.date),n.value||'—',actions(n)])}/></Panel></div></>):(selectedRecord?.kind==='project'?projectDetail(selectedRecord):<>{heading('Archive','Restore or delete items you no longer need.')}<div className="stack"><Panel title="Folders"><DataTable heads={['Folder','Description','Actions']} rows={records.filter(r=>r.kind==='folder'&&!r.deleted&&isArchived(r)).map(f=>[link(f),f.description||'—',actions(f)])}/></Panel><Panel title="Projects">{projectTable(records.filter(r=>r.kind==='project'&&!r.deleted&&isArchived(r)))}</Panel><Panel title="Tasks">{taskTable(records.filter(r=>r.kind==='task'&&!r.deleted&&isArchived(r)))}</Panel>{(['contact','resource','activity','note','inbox'] as const).map(kind=><Panel key={kind} title={kind[0].toUpperCase()+kind.slice(1)+'s'}><DataTable heads={['Item','Related project','Details','Actions']} rows={records.filter(r=>r.kind===kind&&!r.deleted&&isArchived(r)).map(r=>[link(r),projectName(r.projectId),r.description||r.notes||r.result||r.type||'—',actions(r)])}/></Panel>)}</div></>);
  const set=(key:keyof RecordItem,value:unknown)=>setForm(prev=>({...prev,[key]:value}));

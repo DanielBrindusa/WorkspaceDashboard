@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {matchesProjectWindow,matchesTaskWindow,nextDailyTask,period,sortProjects,sortTasks} from './workspaceLogic.ts';
+import {upsertFavorite,removeFavorite} from './favorites.ts';
 
 test('weeks begin Monday and months include their last day',()=>{
  assert.deepEqual(period('2026-09-25','week'),{start:'2026-09-21',end:'2026-09-27'});
@@ -40,4 +41,15 @@ test('daily tasks generate once for next day through inclusive end date',()=>{
  assert.equal(next?.id,'RCR_TSK001_20260926');
  assert.equal(next?.status,'To Do');
  assert.equal(nextDailyTask({...item,due:'2026-09-27'},'2026-09-27'),null);
+});
+test('saved views never exceed five and replacement targets the selected view',()=>{
+ const views=Array.from({length:5},(_,i)=>({id:`v${i}`,name:`View ${i}`,scope:'tasks',settings:{windowFilter:'All',folderFilter:'All',projectFilter:'All',sortLevels:['Due date','Importance','Title']}}));
+ const replacement={...views[0],id:'new',name:'Work deadlines'};
+ assert.throws(()=>upsertFavorite(views,replacement),/Five views/);
+ assert.throws(()=>upsertFavorite(views,replacement,'missing'),/no longer available/);
+ const updated=upsertFavorite(views,replacement,'v2');
+ assert.equal(updated.length,5);
+ assert.equal(updated[2].id,'new');
+ assert.equal(updated[0].id,'v0');
+ assert.equal(removeFavorite(updated,'new').length,4);
 });
